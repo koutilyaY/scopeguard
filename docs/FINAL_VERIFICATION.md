@@ -4,7 +4,44 @@ Date of run: 2026-07-14. All commands were executed against the local Docker
 infrastructure (Postgres 16 + pgvector, Redis, MinIO) with the deterministic fake LLM
 provider. Ollama was **not** required for any test or evaluation.
 
-## Commands executed and results
+## Audit re-run (2026-07-14, post-implementation audit)
+
+A full audit of the repository against every mandatory acceptance criterion was
+performed (see [REQUIREMENTS_TRACEABILITY.md](REQUIREMENTS_TRACEABILITY.md)). It found
+and fixed one **critical correctness defect** plus three minor defects; every check
+below was then re-run green.
+
+| Check | Result |
+|-------|--------|
+| `ruff check` / `ruff format --check` | clean (1 test file reformatted during audit) |
+| `mypy app` | clean (75 files) |
+| `pytest tests` | **140 passed, 0 skipped** (was 139; +1 regression test) |
+| `evaluations.run --provider fake` | PASS — financial 100% (11/11), citation validity 100% |
+| migration up/down/up from empty | OK |
+| seed on fresh DB | OK |
+| frontend eslint / tsc / prettier --check | clean (17 files formatted during audit) |
+| frontend vitest | 13 passed |
+| frontend build | OK |
+| Playwright e2e | **5 passed, deterministic** (re-ran the fixed test 3× — no flake) |
+| `docker compose up` (rebuilt api + worker) | all 7 services healthy; `/health/ready` all true |
+| containerized double-count regression | approve + re-run → **1 finding, $6,080** (was 2 / $12,160) |
+| backup (container `pg_dump`) | valid PGDMP dump |
+
+**Critical defect fixed — potential-value double-counting.** Before the fix, running a
+review, approving the finding for follow-up, then re-running the review created a
+second finding for the same evidence, so the dashboard showed **$12,160** for work
+worth **$6,080**. Root cause: dedup treated only `pending`/`needs_more_evidence` as
+"occupying" the evidence. Fix: `services/review/engine.py` now also treats
+`approved_for_followup` and `approved_for_billing` as occupying; only `rejected` /
+`already_resolved` free the evidence for a fresh finding. Reproduced before fixing,
+covered by `test_rerun_after_approval_does_not_duplicate_finding`, and re-verified on
+host, in a unit test, and in the fully containerized stack.
+
+Minor defects fixed: flaky approve→generate e2e test (now deterministic); unlabeled
+finding-filter `<select>`s (added `htmlFor`/`aria-label`); unformatted frontend/test
+files (prettier/ruff format applied).
+
+## Commands executed and results (original build run)
 
 ### Repository hygiene search
 ```

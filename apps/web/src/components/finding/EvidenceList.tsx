@@ -32,9 +32,7 @@ export function EvidenceList({
               {e.document_page && <span>page {e.document_page}</span>}
               {e.section_reference && <span>§{e.section_reference}</span>}
             </div>
-            {e.quotation && (
-              <p className="mt-1 text-sm italic text-slate-700">“{e.quotation}”</p>
-            )}
+            {e.quotation && <p className="mt-1 text-sm italic text-slate-700">“{e.quotation}”</p>}
             {e.relevance_explanation && (
               <p className="mt-1 text-sm text-slate-600">{e.relevance_explanation}</p>
             )}

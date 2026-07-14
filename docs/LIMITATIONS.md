@@ -41,3 +41,30 @@ ScopeGuard is an evidence-gathering, decision-support MVP. It is deliberately na
 Automatic invoice creation, automatic email sending, legal conclusions, OCR, live
 integrations, mailbox-wide ingestion, and fully autonomous contract decisions are all
 out of scope by design — not oversights.
+
+## Audit notes and residual caveats (2026-07-14)
+
+A full audit against the mandatory acceptance criteria was performed; results are in
+[REQUIREMENTS_TRACEABILITY.md](REQUIREMENTS_TRACEABILITY.md). Honest residual caveats:
+
+- **Finding dedup keys on the deterministic work-group signature, not on semantic
+  equivalence.** Re-running a review no longer duplicates a finding that a human has
+  approved for follow-up/billing (fixed this audit). However, if the underlying
+  evidence *changes* such that the work-group key changes (e.g. new time entries land),
+  a re-run may legitimately raise a new finding for the changed group; humans should
+  review the group composition shown on each finding.
+- **Rejected / already-resolved findings can re-appear on a later run.** By design, a
+  terminal human decision frees the evidence, so if the same out-of-scope work is still
+  present next period a fresh finding is raised. This is intentional (persistent issues
+  should resurface) but means a rejection is per-run, not permanent suppression.
+- **The host `pg_dump` restore smoke test skips when the host client version cannot dump
+  the containerized Postgres 16 server.** The production backup path
+  (`scripts/backup.sh`) runs `pg_dump` *inside* the container where versions match; that
+  path was exercised manually (valid PGDMP dump produced).
+- **Test isolation vs. the shared dev database.** The demo (`scopeguard`) database
+  accumulates findings across manual review runs; this is expected operational state,
+  not a defect. The automated suite uses a separate `scopeguard_test` database that is
+  truncated between tests.
+- **Local model quality still varies** (unchanged): deterministic financial/duplicate
+  logic is unaffected, but classification/draft quality depends on the chosen Ollama
+  model. All gating tests and evaluations run against the deterministic fake provider.

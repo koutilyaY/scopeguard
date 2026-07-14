@@ -40,9 +40,22 @@ def test_pg_dump_restore_roundtrip(migrated_db, tmp_path):
 
     try:
         dump_result = subprocess.run(
-            ["pg_dump", "-h", parts["host"], "-p", parts["port"], "-U", parts["user"],
-             "-Fc", "-f", str(dump), parts["db"]],
-            env=env, capture_output=True, text=True,
+            [
+                "pg_dump",
+                "-h",
+                parts["host"],
+                "-p",
+                parts["port"],
+                "-U",
+                parts["user"],
+                "-Fc",
+                "-f",
+                str(dump),
+                parts["db"],
+            ],
+            env=env,
+            capture_output=True,
+            text=True,
         )
     except OSError as exc:  # pragma: no cover - environment dependent
         pytest.skip(f"host pg_dump not runnable: {exc}")
@@ -59,15 +72,30 @@ def test_pg_dump_restore_roundtrip(migrated_db, tmp_path):
         conn.commit()
 
     restore_result = subprocess.run(
-        ["pg_restore", "-h", parts["host"], "-p", parts["port"], "-U", parts["user"],
-         "-d", parts["db"], "--no-owner", str(dump)],
-        env=env, capture_output=True, text=True,
+        [
+            "pg_restore",
+            "-h",
+            parts["host"],
+            "-p",
+            parts["port"],
+            "-U",
+            parts["user"],
+            "-d",
+            parts["db"],
+            "--no-owner",
+            str(dump),
+        ],
+        env=env,
+        capture_output=True,
+        text=True,
     )
     # pg_restore may emit non-fatal warnings; check the key tables exist.
     with get_engine().connect() as conn:
-        tables = conn.execute(
-            text("SELECT tablename FROM pg_tables WHERE schemaname='public'")
-        ).scalars().all()
+        tables = (
+            conn.execute(text("SELECT tablename FROM pg_tables WHERE schemaname='public'"))
+            .scalars()
+            .all()
+        )
     assert "findings" in tables
     assert "organizations" in tables
     assert restore_result.returncode == 0 or "findings" in tables

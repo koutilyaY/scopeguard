@@ -40,8 +40,7 @@ export default function ProjectsPage() {
   if (isLoading) return <LoadingState />;
   if (isError || !data) return <ErrorState message="Could not load projects." />;
 
-  const clientName = (id: string) =>
-    clients?.items.find((c) => c.id === id)?.display_name ?? "—";
+  const clientName = (id: string) => clients?.items.find((c) => c.id === id)?.display_name ?? "—";
 
   return (
     <div className="space-y-4">
@@ -93,7 +92,10 @@ export default function ProjectsPage() {
       )}
 
       {data.items.length === 0 ? (
-        <EmptyState title="No projects yet" hint="Create a project to import work and run reviews." />
+        <EmptyState
+          title="No projects yet"
+          hint="Create a project to import work and run reviews."
+        />
       ) : (
         <div className="card divide-y divide-slate-100">
           {data.items.map((p) => (
@@ -104,7 +106,9 @@ export default function ProjectsPage() {
             >
               <div>
                 <p className="font-medium">{p.name}</p>
-                <p className="text-sm text-slate-500">{clientName(p.client_id)} · {p.currency}</p>
+                <p className="text-sm text-slate-500">
+                  {clientName(p.client_id)} · {p.currency}
+                </p>
               </div>
               <Badge value={p.status} />
             </Link>

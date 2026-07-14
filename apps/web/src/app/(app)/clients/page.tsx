@@ -91,7 +91,10 @@ export default function ClientsPage() {
               </div>
               <div className="flex items-center gap-3">
                 <Badge value={c.status} />
-                <Link className="text-sm text-brand-600 hover:underline" href={`/projects?client=${c.id}`}>
+                <Link
+                  className="text-sm text-brand-600 hover:underline"
+                  href={`/projects?client=${c.id}`}
+                >
                   Projects →
                 </Link>
               </div>

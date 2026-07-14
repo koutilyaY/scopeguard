@@ -1,11 +1,7 @@
 // Shared API response types, kept in sync with the FastAPI Pydantic models.
 
 export type Role =
-  | "organization_admin"
-  | "finance_manager"
-  | "project_manager"
-  | "reviewer"
-  | "read_only";
+  "organization_admin" | "finance_manager" | "project_manager" | "reviewer" | "read_only";
 
 export interface User {
   id: string;
@@ -137,7 +133,12 @@ export interface FindingDetail extends Finding {
   contradicting_summary: string | null;
   evidence: Evidence[];
   decisions: Decision[];
-  artifacts: { id: string; artifact_type: string; created_at: string; approved_by_user: string | null }[];
+  artifacts: {
+    id: string;
+    artifact_type: string;
+    created_at: string;
+    approved_by_user: string | null;
+  }[];
   disclaimer: string;
 }
 

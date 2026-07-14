@@ -6,13 +6,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/lib/api";
-import {
-  useContracts,
-  useDocuments,
-  useMe,
-  useProject,
-  useReviewRuns,
-} from "@/lib/hooks";
+import { useContracts, useDocuments, useMe, useProject, useReviewRuns } from "@/lib/hooks";
 import { Badge, BackLink, Disclaimer, ErrorState, LoadingState } from "@/components/ui";
 import { DocumentsTab } from "@/components/project/DocumentsTab";
 import { ContractsTab } from "@/components/project/ContractsTab";

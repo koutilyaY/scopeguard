@@ -63,6 +63,26 @@ The neighbouring `~/supply_chain_project` repo is unrelated and untouched.
 - **Scope size**: the spec is very large. Priority order: correctness of deterministic
   billing logic and tenant isolation first, breadth of UI second.
 
+## Post-implementation audit (2026-07-14)
+
+Full audit against every mandatory acceptance criterion — real code inspected, every
+automated check re-run. See [REQUIREMENTS_TRACEABILITY.md](REQUIREMENTS_TRACEABILITY.md)
+and [FINAL_VERIFICATION.md](FINAL_VERIFICATION.md).
+
+- **Critical defect found & fixed**: re-running a review after approving a finding
+  double-counted its potential value ($12,160 for $6,080 of work). Dedup now treats
+  `approved_for_followup`/`approved_for_billing` as occupying the evidence
+  (`services/review/engine.py`); regression test added. Verified on host, unit, and
+  containerized stack.
+- Minor fixes: flaky approve→generate e2e test made deterministic; unlabeled
+  finding-filter selects given `htmlFor`/`aria-label`; prettier/ruff-format applied
+  (18 files).
+- Re-run results: ruff/mypy/eslint/tsc/prettier clean · **140 backend tests, 0 skipped**
+  · 13 frontend · **5 e2e (no flake over 3 runs)** · eval PASS (financial 100%) ·
+  migration up/down/up · seed on fresh DB · `docker compose up` all healthy · backup dump OK.
+- Static sweep: 0 TODO/FIXME/NotImplemented/mock/dead-buttons/hardcoded-secrets in app code.
+
 ## Progress log
 
 - 2026-07-14: Phase 0 complete — environment verified, repo skeleton created.
+- 2026-07-14: Audit pass — fixed potential-value double-count + 3 minor defects; all checks green.

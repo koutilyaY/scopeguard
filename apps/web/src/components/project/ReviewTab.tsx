@@ -25,8 +25,7 @@ export function ReviewTab({ projectId }: { projectId: string }) {
   // poll the just-created run until it finishes
   const { data: activeRun } = useReviewRun(activeRunId ?? "", !!activeRunId);
   const runDone =
-    activeRun &&
-    ["completed", "completed_with_errors", "failed"].includes(activeRun.status);
+    activeRun && ["completed", "completed_with_errors", "failed"].includes(activeRun.status);
   if (activeRunId && runDone) {
     setActiveRunId(null);
     qc.invalidateQueries({ queryKey: ["review-runs", projectId] });
@@ -62,13 +61,25 @@ export function ReviewTab({ projectId }: { projectId: string }) {
               <label className="label" htmlFor="start">
                 Period start
               </label>
-              <input id="start" type="date" className="input" value={start} onChange={(e) => setStart(e.target.value)} />
+              <input
+                id="start"
+                type="date"
+                className="input"
+                value={start}
+                onChange={(e) => setStart(e.target.value)}
+              />
             </div>
             <div>
               <label className="label" htmlFor="end">
                 Period end
               </label>
-              <input id="end" type="date" className="input" value={end} onChange={(e) => setEnd(e.target.value)} />
+              <input
+                id="end"
+                type="date"
+                className="input"
+                value={end}
+                onChange={(e) => setEnd(e.target.value)}
+              />
             </div>
             <button className="btn-primary" onClick={runReview} disabled={!!activeRunId}>
               {activeRunId ? "Running…" : "Run review"}

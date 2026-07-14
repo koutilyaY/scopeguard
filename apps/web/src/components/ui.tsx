@@ -13,7 +13,10 @@ export function LoadingState({ label = "Loading…" }: { label?: string }) {
 
 export function ErrorState({ message }: { message: string }) {
   return (
-    <div className="m-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
+    <div
+      className="m-4 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+      role="alert"
+    >
       {message}
     </div>
   );
@@ -70,9 +73,8 @@ export function Disclaimer({ className = "" }: { className?: string }) {
   return (
     <p className={`text-xs text-slate-500 ${className}`}>
       ScopeGuard provides operational review assistance. Findings are{" "}
-      <strong>not legal or accounting advice</strong>; contract interpretation may be ambiguous
-      and human verification is required. Potential value does not equal invoiced or collected
-      revenue.
+      <strong>not legal or accounting advice</strong>; contract interpretation may be ambiguous and
+      human verification is required. Potential value does not equal invoiced or collected revenue.
     </p>
   );
 }

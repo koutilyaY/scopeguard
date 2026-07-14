@@ -42,9 +42,7 @@ export function useProjects(clientId?: string) {
   return useQuery({
     queryKey: ["projects", clientId ?? "all"],
     queryFn: () =>
-      api.get<Page<Project>>(
-        `/projects?page_size=100${clientId ? `&client_id=${clientId}` : ""}`,
-      ),
+      api.get<Page<Project>>(`/projects?page_size=100${clientId ? `&client_id=${clientId}` : ""}`),
   });
 }
 

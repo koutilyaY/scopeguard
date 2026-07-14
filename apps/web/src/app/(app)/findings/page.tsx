@@ -60,10 +60,26 @@ export default function FindingInboxPage() {
       </div>
 
       <div className="card grid grid-cols-1 gap-3 p-4 sm:grid-cols-4">
-        <FilterSelect label="Type" options={FINDING_TYPES} onChange={(v) => setFilter("finding_type", v)} />
-        <FilterSelect label="Classification" options={CLASSIFICATIONS} onChange={(v) => setFilter("classification", v)} />
-        <FilterSelect label="Review status" options={STATUSES} onChange={(v) => setFilter("review_status", v)} />
-        <FilterSelect label="Risk" options={["low", "medium", "high"]} onChange={(v) => setFilter("risk_level", v)} />
+        <FilterSelect
+          label="Type"
+          options={FINDING_TYPES}
+          onChange={(v) => setFilter("finding_type", v)}
+        />
+        <FilterSelect
+          label="Classification"
+          options={CLASSIFICATIONS}
+          onChange={(v) => setFilter("classification", v)}
+        />
+        <FilterSelect
+          label="Review status"
+          options={STATUSES}
+          onChange={(v) => setFilter("review_status", v)}
+        />
+        <FilterSelect
+          label="Risk"
+          options={["low", "medium", "high"]}
+          onChange={(v) => setFilter("risk_level", v)}
+        />
       </div>
 
       {isLoading ? (
@@ -105,7 +121,9 @@ export default function FindingInboxPage() {
                       : "value unavailable"}
                   </p>
                   {f.confidence != null && (
-                    <p className="text-xs text-slate-500">confidence {(f.confidence * 100).toFixed(0)}%</p>
+                    <p className="text-xs text-slate-500">
+                      confidence {(f.confidence * 100).toFixed(0)}%
+                    </p>
                   )}
                 </div>
               </div>
@@ -127,10 +145,19 @@ function FilterSelect({
   options: string[];
   onChange: (v: string) => void;
 }) {
+  const id = `filter-${label.toLowerCase().replace(/\s+/g, "-")}`;
   return (
     <div>
-      <label className="label">{label}</label>
-      <select className="input" onChange={(e) => onChange(e.target.value)} defaultValue="">
+      <label className="label" htmlFor={id}>
+        {label}
+      </label>
+      <select
+        id={id}
+        aria-label={label}
+        className="input"
+        onChange={(e) => onChange(e.target.value)}
+        defaultValue=""
+      >
         <option value="">All</option>
         {options.map((o) => (
           <option key={o} value={o}>

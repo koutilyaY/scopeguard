@@ -74,13 +74,23 @@ export function ContractsTab({ projectId, clientId }: { projectId: string; clien
             <label className="label" htmlFor="ctitle">
               Title
             </label>
-            <input id="ctitle" className="input" value={title} onChange={(e) => setTitle(e.target.value)} />
+            <input
+              id="ctitle"
+              className="input"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
           </div>
           <div>
             <label className="label" htmlFor="cdoc">
               Governing document (extracted text required for clause extraction)
             </label>
-            <select id="cdoc" className="input" value={docId} onChange={(e) => setDocId(e.target.value)}>
+            <select
+              id="cdoc"
+              className="input"
+              value={docId}
+              onChange={(e) => setDocId(e.target.value)}
+            >
               <option value="">None</option>
               {extractableDocs.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -94,13 +104,25 @@ export function ContractsTab({ projectId, clientId }: { projectId: string; clien
               <label className="label" htmlFor="cfrom">
                 Effective from
               </label>
-              <input id="cfrom" type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} />
+              <input
+                id="cfrom"
+                type="date"
+                className="input"
+                value={from}
+                onChange={(e) => setFrom(e.target.value)}
+              />
             </div>
             <div>
               <label className="label" htmlFor="cto">
                 Effective to
               </label>
-              <input id="cto" type="date" className="input" value={to} onChange={(e) => setTo(e.target.value)} />
+              <input
+                id="cto"
+                type="date"
+                className="input"
+                value={to}
+                onChange={(e) => setTo(e.target.value)}
+              />
             </div>
           </div>
           <button className="btn-primary" onClick={createContract} disabled={!title}>

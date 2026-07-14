@@ -165,3 +165,38 @@ def test_rerun_is_idempotent_no_duplicate_findings(seeded, db):
     # second run must not recreate the same unresolved findings
     assert count2 == 0
     assert count1 >= 2
+
+
+def test_rerun_after_approval_does_not_duplicate_finding(seeded, db):
+    """Regression: a finding approved for follow-up still occupies its evidence.
+
+    Re-running the review must not create a second finding for the same work, which
+    would double-count the same potential value.
+    """
+    org, project, admin = seeded
+    run1 = run_review(db, org, project, admin)
+    oos = db.execute(
+        select(Finding).where(
+            Finding.review_run_id == run1.id,
+            Finding.finding_type == FindingType.potentially_out_of_scope,
+        )
+    ).scalar_one()
+
+    # Human approves the finding for follow-up (still an open, value-bearing finding).
+    oos.review_status = ReviewStatus.approved_for_followup
+    db.commit()
+
+    run2 = run_review(db, org, project, admin)
+    oos_after = (
+        db.execute(
+            select(Finding).where(
+                Finding.project_id == project.id,
+                Finding.finding_type == FindingType.potentially_out_of_scope,
+            )
+        )
+        .scalars()
+        .all()
+    )
+    # Still exactly one OOS finding — no duplicate created by the re-run.
+    assert len(oos_after) == 1
+    assert not any(f.review_run_id == run2.id for f in oos_after)

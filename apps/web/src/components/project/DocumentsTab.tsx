@@ -63,7 +63,8 @@ export function DocumentsTab({ projectId, clientId }: { projectId: string; clien
         <div className="card space-y-3 p-4">
           <h3 className="font-medium">Upload a document</h3>
           <p className="text-xs text-slate-500">
-            PDF or DOCX. Scanned PDFs without machine-readable text are flagged (OCR is not enabled).
+            PDF or DOCX. Scanned PDFs without machine-readable text are flagged (OCR is not
+            enabled).
           </p>
           <div className="flex flex-wrap items-end gap-3">
             <div>

@@ -60,7 +60,9 @@ export default function ContractReviewPage() {
                   <p className="mt-1 text-xs text-slate-500">
                     {c.page_number ? `Page ${c.page_number}` : ""}
                     {c.section_reference ? ` · §${c.section_reference}` : ""}
-                    {c.confidence != null ? ` · model confidence ${(c.confidence * 100).toFixed(0)}%` : ""}
+                    {c.confidence != null
+                      ? ` · model confidence ${(c.confidence * 100).toFixed(0)}%`
+                      : ""}
                   </p>
                   {c.normalized_interpretation && (
                     <p className="mt-1 text-sm text-slate-600">{c.normalized_interpretation}</p>

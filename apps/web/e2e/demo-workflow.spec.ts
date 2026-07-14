@@ -54,9 +54,7 @@ test("open the finding and verify evidence and calculation", async ({ page }) =>
 
   // Evidence: the exclusion clause quotation and the Jira work item are shown.
   await expect(page.getByText("Supporting evidence")).toBeVisible();
-  await expect(
-    page.getByText(/Onboarding of new source systems is excluded/i),
-  ).toBeVisible();
+  await expect(page.getByText(/Onboarding of new source systems is excluded/i)).toBeVisible();
 
   // Deterministic calculation is present.
   await expect(page.getByText("Calculation breakdown")).toBeVisible();
@@ -66,20 +64,29 @@ test("open the finding and verify evidence and calculation", async ({ page }) =>
 test("approve a finding, generate a summary, and export the report", async ({ page }) => {
   await login(page);
   await page.getByRole("link", { name: "Finding inbox" }).click();
-  await page.getByTestId("finding-row").first().click();
 
-  // If not already approved, approve for follow-up.
-  const actionSelect = page.getByLabel("Action");
-  if (await actionSelect.isVisible()) {
-    await actionSelect.selectOption("approved_for_followup");
+  // Deterministically target the potentially-out-of-scope finding (not the duplicate).
+  await page.getByLabel("Type").selectOption("potentially_out_of_scope");
+  await page.getByTestId("finding-row").first().click();
+  await expect(page.getByRole("heading", { name: /Potentially out-of-scope/i })).toBeVisible();
+
+  // Approve for follow-up only if it is still pending, then wait for the change to
+  // persist before doing anything that depends on approval.
+  const status = page.getByText(/Current status:/);
+  await expect(status).toBeVisible();
+  if (((await status.textContent()) ?? "").includes("pending")) {
+    await page.getByLabel("Action").selectOption("approved_for_followup");
     await page
       .getByLabel("Reason")
       .fill("Salesforce onboarding is a new source system, excluded per SOW section 3.");
-    await page.getByRole("button", { name: "Record decision" }).click();
+    const record = page.getByRole("button", { name: "Record decision" });
+    await expect(record).toBeEnabled();
+    await record.click();
   }
+  // Approval must be reflected in the UI before artifact generation is possible.
+  await expect(page.getByText(/Current status:\s*approved for followup/i)).toBeVisible();
 
-  // Generate an internal review summary (allowed after approval).
-  await expect(page.getByText("Generate draft artifact")).toBeVisible();
+  // Generate an internal review summary (allowed only after approval).
   const genButton = page.getByRole("button", { name: /Generate draft/i });
   await expect(genButton).toBeVisible();
   await genButton.click();

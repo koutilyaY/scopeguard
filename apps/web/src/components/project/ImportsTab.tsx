@@ -165,7 +165,9 @@ export function ImportsTab({ projectId }: { projectId: string }) {
         </div>
       )}
 
-      {committed && <p className="rounded-md bg-slate-50 p-3 text-sm text-slate-700">{committed}</p>}
+      {committed && (
+        <p className="rounded-md bg-slate-50 p-3 text-sm text-slate-700">{committed}</p>
+      )}
     </div>
   );
 }

@@ -99,7 +99,9 @@ export default function FindingDetailPage() {
                       <Badge value={d.previous_status} /> → <Badge value={d.new_status} />
                     </p>
                     <p className="mt-1 text-slate-600">{d.reason}</p>
-                    <p className="text-xs text-slate-400">{new Date(d.created_at).toLocaleString()}</p>
+                    <p className="text-xs text-slate-400">
+                      {new Date(d.created_at).toLocaleString()}
+                    </p>
                   </li>
                 ))}
               </ul>
@@ -108,10 +110,16 @@ export default function FindingDetailPage() {
           <div className="card p-4">
             <h2 className="mb-2 font-medium">Export</h2>
             <div className="flex flex-col gap-2 text-sm">
-              <a className="text-brand-600 hover:underline" href={`/api/v1/reports/findings/${finding.id}.pdf`}>
+              <a
+                className="text-brand-600 hover:underline"
+                href={`/api/v1/reports/findings/${finding.id}.pdf`}
+              >
                 Evidence report (PDF)
               </a>
-              <a className="text-brand-600 hover:underline" href={`/api/v1/reports/findings/${finding.id}.json`}>
+              <a
+                className="text-brand-600 hover:underline"
+                href={`/api/v1/reports/findings/${finding.id}.json`}
+              >
                 Audit JSON
               </a>
             </div>

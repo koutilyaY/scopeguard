@@ -47,9 +47,7 @@ describe("CalculationBreakdown", () => {
 
   it("renders duplicate groups when present", () => {
     const dup = {
-      duplicate_groups: [
-        { kind: "exact", explanation: "Identical entry excluded from totals." },
-      ],
+      duplicate_groups: [{ kind: "exact", explanation: "Identical entry excluded from totals." }],
     };
     render(<CalculationBreakdown calculation={dup} evidence={null} />);
     expect(screen.getByText(/exact duplicate:/)).toBeInTheDocument();

@@ -55,7 +55,18 @@ from app.services.review.temporal import clause_applies, resolve_rate
 
 logger = logging.getLogger("scopeguard.review")
 
-UNRESOLVED_STATUSES = {ReviewStatus.pending, ReviewStatus.needs_more_evidence}
+# A finding "occupies" its evidence until a human reaches a terminal decision.
+# Re-running a review must NOT create a second finding for evidence that already has an
+# open finding — including one already approved for follow-up or billing — otherwise the
+# same value is counted twice (e.g. the dashboard's potential bucket includes
+# approved_for_followup). Only rejected / already-resolved findings free the evidence for
+# a fresh finding on a later run.
+OCCUPYING_STATUSES = {
+    ReviewStatus.pending,
+    ReviewStatus.needs_more_evidence,
+    ReviewStatus.approved_for_followup,
+    ReviewStatus.approved_for_billing,
+}
 
 
 def _dedup_key(finding_type: FindingType, group_key: str, run: ReviewRun) -> str:
@@ -68,7 +79,7 @@ def _finding_exists(db: Session, organization_id: uuid.UUID, dedup_key: str) -> 
         select(Finding).where(
             Finding.organization_id == organization_id,
             Finding.dedup_key == dedup_key,
-            Finding.review_status.in_(UNRESOLVED_STATUSES),
+            Finding.review_status.in_(OCCUPYING_STATUSES),
         )
     ).first()
     return existing is not None

@@ -20,11 +20,7 @@ function getCsrfToken(): string | null {
 
 type Json = Record<string, unknown> | unknown[];
 
-async function request<T>(
-  method: string,
-  path: string,
-  body?: Json | FormData,
-): Promise<T> {
+async function request<T>(method: string, path: string, body?: Json | FormData): Promise<T> {
   const headers: Record<string, string> = {};
   const isForm = body instanceof FormData;
   if (body && !isForm) headers["Content-Type"] = "application/json";
@@ -40,9 +36,7 @@ async function request<T>(
   });
   if (res.status === 204) return undefined as T;
   const contentType = res.headers.get("content-type") || "";
-  const payload = contentType.includes("application/json")
-    ? await res.json()
-    : await res.text();
+  const payload = contentType.includes("application/json") ? await res.json() : await res.text();
   if (!res.ok) {
     const detail =
       typeof payload === "object" && payload && "detail" in payload

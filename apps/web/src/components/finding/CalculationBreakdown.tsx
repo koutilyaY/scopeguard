@@ -117,16 +117,15 @@ function CalcTable({ calculation }: { calculation: Record<string, unknown> }) {
 
 function EvidenceScore({ evidence }: { evidence: Record<string, unknown> }) {
   const score = evidence.score as number;
-  const components = (evidence.components as Array<{
-    component: string;
-    present: boolean;
-    contribution: number;
-  }>) ?? [];
+  const components =
+    (evidence.components as Array<{
+      component: string;
+      present: boolean;
+      contribution: number;
+    }>) ?? [];
   return (
     <div className="mt-4 border-t border-slate-200 pt-3">
-      <p className="text-sm font-medium">
-        Evidence completeness: {(score * 100).toFixed(0)}%
-      </p>
+      <p className="text-sm font-medium">Evidence completeness: {(score * 100).toFixed(0)}%</p>
       <p className="text-xs text-slate-500">{String(evidence.disclaimer ?? "")}</p>
       <ul className="mt-2 grid grid-cols-2 gap-x-4 text-xs">
         {components.map((c) => (
