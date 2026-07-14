@@ -1,0 +1,23 @@
+# Development overrides: infrastructure only, run api/web on the host with hot reload.
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up postgres redis minio mailpit
+# then:
+#   make dev-api   (uvicorn --reload on :8000)
+#   make dev-web   (next dev on :3000)
+#   make dev-worker
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:5433:5432"
+  redis:
+    ports:
+      - "127.0.0.1:6380:6379"
+  minio:
+    ports:
+      - "127.0.0.1:9002:9000"
+      - "127.0.0.1:9003:9001"
+  api:
+    profiles: ["full"]
+  worker:
+    profiles: ["full"]
+  web:
+    profiles: ["full"]

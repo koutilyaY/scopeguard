@@ -1,0 +1,108 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# No repository secrets are required. The live-Ollama evaluation is not run here.
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: scopeguard_test
+          POSTGRES_USER: scopeguard
+          POSTGRES_PASSWORD: scopeguard-dev-password
+        ports: ["5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U scopeguard"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      redis:
+        image: redis:7-alpine
+        ports: ["6380:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 5s
+          --health-timeout 3s --health-retries 12
+      minio:
+        image: bitnami/minio:latest
+        env:
+          MINIO_ROOT_USER: scopeguard
+          MINIO_ROOT_PASSWORD: scopeguard-dev-secret
+        ports: ["9002:9000"]
+    env:
+      DATABASE_URL: postgresql+psycopg://scopeguard:scopeguard-dev-password@localhost:5433/scopeguard_test
+      REDIS_URL: redis://localhost:6380/9
+      CELERY_BROKER_URL: memory://
+      CELERY_RESULT_BACKEND: cache+memory://
+      MINIO_ENDPOINT: localhost:9002
+      MINIO_ACCESS_KEY: scopeguard
+      MINIO_SECRET_KEY: scopeguard-dev-secret
+      MINIO_BUCKET: scopeguard-test
+      LLM_PROVIDER: fake
+    defaults:
+      run:
+        working-directory: apps/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: Lint (ruff)
+        run: ruff check app tests
+      - name: Type check (mypy)
+        run: mypy app
+      - name: Unit + integration + security tests
+        run: pytest tests -q
+      - name: Deterministic evaluations
+        run: python -m evaluations.run --provider fake
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci || npm install
+      - name: Lint
+        run: npm run lint
+      - name: Type check
+        run: npm run typecheck
+      - name: Unit tests
+        run: npx vitest run
+      - name: Production build
+        run: npm run build
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -t scopeguard-api apps/api
+      - name: Build web image
+        run: docker build -f apps/web/Dockerfile -t scopeguard-web .
+
+  dependency-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python dependency audit (pip-audit, free)
+        run: |
+          python -m pip install --upgrade pip pip-audit
+          pip install -e "apps/api[dev]"
+          pip-audit --strict || echo "pip-audit reported advisories (non-blocking in MVP)"
+      - name: Node dependency audit
+        working-directory: apps/web
+        run: |
+          npm install
+          npm audit --production || echo "npm audit reported advisories (non-blocking in MVP)"
