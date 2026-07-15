@@ -68,3 +68,16 @@ A full audit against the mandatory acceptance criteria was performed; results ar
 - **Local model quality still varies** (unchanged): deterministic financial/duplicate
   logic is unaffected, but classification/draft quality depends on the chosen Ollama
   model. All gating tests and evaluations run against the deterministic fake provider.
+- **The web API URL is baked at image-build time, not runtime.** Next.js resolves
+  `next.config.mjs` `rewrites()` during `next build` and freezes the destination into
+  `routes-manifest.json`, so setting `API_INTERNAL_URL` as a *runtime* env var has no
+  effect on the built image. The Dockerfile therefore accepts it as a build arg
+  (default `http://api:8000`, matching the compose service name). Pointing the web app
+  at a different API host requires a rebuild:
+  `docker build --build-arg API_INTERNAL_URL=https://api.example.com -f apps/web/Dockerfile .`
+  A runtime-configurable proxy (e.g. Next middleware) would remove this constraint but
+  is not implemented in the MVP.
+- **Docker-only failure modes exist that host/dev-mode testing will not catch.** The
+  audit found two (build-time-baked proxy URL; a healthcheck binary absent from the
+  runtime image). Always validate changes against `docker compose up`, not just
+  `make dev`.

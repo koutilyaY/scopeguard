@@ -144,8 +144,10 @@ services:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        # Baked into the build: Next resolves rewrite destinations at build time.
+        API_INTERNAL_URL: ${API_INTERNAL_URL:-http://api:8000}
     environment:
-      API_INTERNAL_URL: http://api:8000
       PORT: "3000"
     depends_on:
       api:
@@ -153,7 +155,12 @@ services:
     ports:
       - "127.0.0.1:${WEB_PORT:-3000}:3000"
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000/login || exit 1"]
+      # node:20-slim ships neither wget nor curl — use the node runtime itself.
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('http').get('http://localhost:3000/login',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
       interval: 15s
       timeout: 10s
       retries: 10

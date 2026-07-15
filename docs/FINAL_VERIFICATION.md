@@ -41,6 +41,46 @@ Minor defects fixed: flaky approve→generate e2e test (now deterministic); unla
 finding-filter `<select>`s (added `htmlFor`/`aria-label`); unformatted frontend/test
 files (prettier/ruff format applied).
 
+## Docker-deployment verification (2026-07-14, second pass)
+
+Running the **fully containerized** stack (rather than host dev servers) surfaced two
+deployment defects that host-mode testing could not have caught. Both are fixed and
+re-verified.
+
+1. **Web container could not serve the app at all (login 500).** `next.config.mjs`
+   defines the `/api/*` → API rewrite, but **Next evaluates `rewrites()` at build time**
+   and freezes the destination into `.next/routes-manifest.json`. `API_INTERNAL_URL` was
+   only supplied at *runtime*, so the image had `http://localhost:8000` baked in.
+   Container log: `Failed to proxy http://localhost:8000/api/v1/auth/login Error:
+   connect ECONNREFUSED 127.0.0.1:8000`. Every request through the web proxy returned
+   500 — the app was unusable in Docker.
+   *Fix*: `apps/web/Dockerfile` now takes `ARG API_INTERNAL_URL` (default
+   `http://api:8000`, matching the compose service) and sets it before `npm run build`;
+   `docker-compose.yml` passes it as a build arg. Verified: baked destination is now
+   `http://api:8000/api/:path*` and proxied login returns **200**.
+2. **Web healthcheck could never pass.** It used `wget`, which does not exist in
+   `node:20-slim` (nor does curl) — every probe failed with `wget: not found`, so the
+   container would go **unhealthy**. Compounding this, Next's standalone server binds to
+   `$HOSTNAME`, which Docker sets to the container name, so it listened only on the
+   container's eth0 IP and refused `localhost` connections.
+   *Fix*: healthcheck now uses the `node` runtime itself; `HOSTNAME=0.0.0.0` set in the
+   Dockerfile so the server binds all interfaces. Verified: `web: Up (healthy)`.
+
+Post-fix containerized results:
+
+| Check | Result |
+|-------|--------|
+| `docker compose up -d --build` | **all 7 services healthy** (api, web, worker, postgres, redis, minio, mailpit) |
+| `/api/v1/health/ready` | `{database, redis, minio, ollama, celery}` all `true` |
+| login via web proxy (`:13000`) | 200 |
+| Playwright e2e **against the Docker stack** | **5/5 passed** |
+| Full workflow via containers | review completed → 1 finding + 1 duplicate excluded → $6,080 (6 valued entries, 4 evidence items) → approve → change-order draft → 4-page PDF |
+| Container logs | no ERROR/Traceback |
+
+**Deployment note (documented limitation):** because Next bakes rewrite destinations at
+build time, pointing the web app at a different API host requires a rebuild:
+`docker build --build-arg API_INTERNAL_URL=https://api.example.com -f apps/web/Dockerfile .`
+
 ## Commands executed and results (original build run)
 
 ### Repository hygiene search
