@@ -3,8 +3,6 @@ quotations are rejected by the pipeline, not trusted."""
 
 from datetime import date
 
-import pytest
-
 from app.services.citations import verify_citation
 from app.services.llm.base import LLMProvider, ModelMetadata
 from tests.conftest import requires_db
