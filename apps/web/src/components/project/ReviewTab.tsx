@@ -99,25 +99,40 @@ export function ReviewTab({ projectId }: { projectId: string }) {
       ) : (
         <div className="card divide-y divide-slate-100">
           {data.items.map((r) => (
-            <div key={r.id} className="flex items-center justify-between p-3 text-sm">
-              <div>
-                <p className="font-medium">
-                  {r.billing_period_start} → {r.billing_period_end}
-                </p>
-                <p className="text-slate-500">
-                  {r.stats?.findings_created ?? 0} finding(s)
-                  {r.model_name ? ` · ${r.model_name}` : ""}
-                </p>
+            <div key={r.id} className="p-3 text-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium">
+                    {r.billing_period_start} → {r.billing_period_end}
+                  </p>
+                  <p className="text-slate-500">
+                    {r.stats?.findings_created ?? 0} finding(s)
+                    {r.model_name ? ` · ${r.model_name}` : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge value={r.status} />
+                  <Link
+                    className="text-brand-600 hover:underline"
+                    href={`/findings?review_run_id=${r.id}`}
+                  >
+                    View findings →
+                  </Link>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <Badge value={r.status} />
-                <Link
-                  className="text-brand-600 hover:underline"
-                  href={`/findings?review_run_id=${r.id}`}
+              {/* A partially-failed run still returns deterministic findings, but the user
+                  must be told what was skipped and why — never fail silently. */}
+              {r.failure_reason && (
+                <div
+                  role="alert"
+                  className="mt-2 rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900"
                 >
-                  View findings →
-                </Link>
-              </div>
+                  <p className="font-medium">
+                    Some analysis could not run — findings may be incomplete.
+                  </p>
+                  <p className="mt-1 break-words">{r.failure_reason}</p>
+                </div>
+              )}
             </div>
           ))}
         </div>

@@ -40,17 +40,49 @@ deterministic-vs-LLM boundary.
 ## Prerequisites
 
 - Docker + Docker Compose
-- (Optional, for live AI) [Ollama](https://ollama.com) — either the containerized
-  service (`--profile ai`) or a host install. **Not required**: all tests and the
-  deterministic evaluation run against a built-in fake provider.
+- [Ollama](https://ollama.com) — **required for scope classification** (path B below).
+  Not required for tests, the deterministic evaluation, or the no-AI demo (path A):
+  those use a built-in deterministic provider.
 
 ## Quick start (Docker)
 
+You must pick a provider. `LLM_PROVIDER` decides whether Ollama is needed — with the
+shipped default (`ollama`), reviews **will not classify anything** until Ollama is
+running with the configured models pulled.
+
+### Path A — demo without AI (fastest, no model download)
+
+Uses the built-in deterministic provider. Every monetary figure, duplicate check and
+date rule is identical to path B (that logic never uses an LLM); only the scope
+*classification* and draft text come from rules instead of a model.
+
 ```bash
 cp .env.example .env
-docker compose up --build -d      # starts postgres, redis, minio, mailpit, api, worker, web
-docker compose run --rm api python -m app.seed   # load the Northstar demo org
+sed -i '' 's/^LLM_PROVIDER=ollama/LLM_PROVIDER=fake/' .env   # Linux: sed -i 's/.../.../'
+docker compose up --build -d
+docker compose run --rm api python -m app.seed
 ```
+Running a June-2025 review on the demo project then yields the $6,080 finding described
+below.
+
+### Path B — real local AI (Ollama)
+
+```bash
+cp .env.example .env                      # keeps LLM_PROVIDER=ollama
+docker compose --profile ai up --build -d # NOTE: --profile ai also starts Ollama
+docker compose exec ollama ollama pull qwen3:8b          # ~5 GB, one-time
+docker compose exec ollama ollama pull nomic-embed-text  # ~275 MB, one-time
+docker compose run --rm api python -m app.seed
+```
+Check readiness before running a review:
+```bash
+curl -s localhost:8000/api/v1/health/ollama   # lists missing models + exact pull commands
+```
+
+> If `LLM_PROVIDER=ollama` and Ollama is unreachable, a review still completes and still
+> returns its **deterministic** findings (duplicates, allowances, reconciliation), but it
+> is marked `completed_with_errors` and the UI shows exactly which groups could not be
+> classified. It does not fail silently, and it does not invent results.
 
 Then open:
 
@@ -77,7 +109,7 @@ containing only the fixed fee. Running a June 2025 review produces a
 duplicate excluded), citing the exclusion clause and the customer request, plus a
 deterministic duplicate finding — all pending human review.
 
-## Ollama setup (optional, for live AI instead of the fake provider)
+## Ollama setup (required when `LLM_PROVIDER=ollama`, the shipped default)
 
 ```bash
 # containerized:

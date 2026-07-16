@@ -3,8 +3,11 @@ quotations are rejected by the pipeline, not trusted."""
 
 from datetime import date
 
+import pytest
+
 from app.services.citations import verify_citation
 from app.services.llm.base import LLMProvider, ModelMetadata
+from tests.conftest import requires_db
 
 
 class HostileProvider(LLMProvider):
@@ -69,6 +72,7 @@ def test_injection_instructions_in_document_are_data_not_commands():
     assert exclusions[0].source_quotation in hostile_doc
 
 
+@requires_db
 def test_pipeline_downgrades_when_all_citations_fabricated(db):
     """If the model returns only fabricated evidence, the engine must not surface a
     confident out-of-scope finding grounded in fake quotes."""
@@ -79,7 +83,6 @@ def test_pipeline_downgrades_when_all_citations_fabricated(db):
     from app.seed import seed
     from app.services.llm import set_llm_provider
     from app.services.review.engine import execute_review_run
-    from tests.conftest import requires_db  # noqa
 
     seed()
     org = db.execute(select(Organization).where(Organization.slug == "northstar")).scalar_one()

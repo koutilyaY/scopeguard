@@ -35,18 +35,32 @@ from app.services.llm import set_llm_provider
 from app.services.llm.fake import FakeLLMProvider
 
 
-def _database_available() -> bool:
+def _database_error() -> str | None:
+    """Return None when the test database is usable, else the reason it is not."""
     try:
         with get_engine().connect() as conn:
             conn.execute(text("SELECT 1"))
-        return True
-    except Exception:
-        return False
+        return None
+    except Exception as exc:  # surfaced loudly below — never silently skipped
+        return f"{type(exc).__name__}: {exc}"
 
+
+_DB_ERROR = _database_error()
+
+# A DB-less run silently skips ~1/3 of the suite (tenant isolation, auth, the review
+# pipeline) while still exiting 0 — a green run that proves almost nothing. Fail loudly
+# by default; set SCOPEGUARD_ALLOW_DB_SKIP=1 only for a deliberate offline unit-only run.
+if _DB_ERROR and os.environ.get("SCOPEGUARD_ALLOW_DB_SKIP") != "1":
+    raise RuntimeError(
+        "Test database is not reachable, so database-backed tests would be silently "
+        f"skipped.\n  DATABASE_URL: {os.environ.get('DATABASE_URL')}\n  Error: {_DB_ERROR}\n"
+        "Start it with `make dev` (or set SCOPEGUARD_ALLOW_DB_SKIP=1 to run unit tests only "
+        "and accept the skips)."
+    )
 
 requires_db = pytest.mark.skipif(
-    not _database_available(),
-    reason="Postgres test database not reachable (start `make dev` first)",
+    _DB_ERROR is not None,
+    reason=f"Postgres test database not reachable ({_DB_ERROR})",
 )
 
 
