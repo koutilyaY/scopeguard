@@ -41,6 +41,54 @@ Minor defects fixed: flaky approve→generate e2e test (now deterministic); unla
 finding-filter `<select>`s (added `htmlFor`/`aria-label`); unformatted frontend/test
 files (prettier/ruff format applied).
 
+## Fresh-clone verification (2026-07-14, third pass — adversarial)
+
+Previous passes tested with a **pre-seeded volume** and hand-set env vars, which hid
+first-run defects. This pass cloned the repo to a new directory, used **empty volumes**,
+copied `.env.example` unmodified, and followed the README literally. Four defects
+surfaced; all are fixed and re-verified.
+
+1. **The documented quick start did not produce a working product.** `.env.example`
+   ships `LLM_PROVIDER=ollama`, but the `ollama` service sits behind `profiles: ["ai"]`,
+   so `docker compose up` never starts it — while the README called Ollama
+   *"(optional)"*. A new user's first review returned `completed_with_errors`, produced
+   **no scope findings**, and only the deterministic duplicate finding.
+   *Fix*: README now documents two explicit paths (A: no-AI deterministic demo, B: real
+   Ollama with the `--profile ai` and `pull` commands); `.env.example` states the
+   consequence of each. Verified: Path A on a fresh clone yields `completed`,
+   `classification_errors: 0`, and the $6,080 finding.
+2. **Review failures were invisible in the UI.** `failure_reason` was returned by the
+   API and typed in TS but **never rendered** — users saw a bare `completed with errors`
+   badge with no explanation, violating the "user-visible failure message" requirement.
+   *Fix*: `ReviewTab` renders an alert with the reason; two regression tests added.
+3. **The test suite lied when the database was down.** 44 DB-backed tests (auth, tenant
+   isolation, review pipeline) **silently skipped** while pytest still exited 0 — a green
+   run proving almost nothing. It produced a false "all clear" twice during this session.
+   *Fix*: `conftest.py` now raises loudly (exit 4) with the DSN and underlying error
+   unless `SCOPEGUARD_ALLOW_DB_SKIP=1`. Also `test_llm_safety.py` *errored* instead of
+   skipping (missing `requires_db`) — fixed.
+4. **Infra host ports were hardcoded**, colliding with other projects on the same
+   machine and surfacing as a confusing `password authentication failed` (tests were
+   silently talking to a *different project's* Postgres on 5433).
+   *Fix*: `POSTGRES_HOST_PORT`, `REDIS_HOST_PORT`, `MINIO_HOST_PORT`,
+   `MINIO_CONSOLE_HOST_PORT`, `MAILPIT_HOST_PORT`, `MAILPIT_SMTP_HOST_PORT`,
+   `OLLAMA_HOST_PORT` — same defaults, now overridable, in both compose files.
+
+Final fresh-clone result (empty volumes, `.env.example` + documented vars only):
+
+| Check | Result |
+|-------|--------|
+| `docker compose up --build -d` | all 7 services **healthy** |
+| `/health/ready` | database, redis, minio, ollama, celery — all `true` |
+| seed on empty volume | Northstar demo org created |
+| review via web proxy | `completed`, `classification_errors: 0`, duplicate excluded |
+| finding | **$6,080 USD**, 4 evidence items, 6 valued entries |
+| approve → change-order draft → PDF | all OK (4-page, 5,886 bytes) |
+| dashboard | potential $6,080 vs invoiced $85,000, correctly separated |
+| Playwright e2e vs fresh-clone stack | **5/5 passed** |
+| backend / frontend | **140** + **15** passed; ruff, format, mypy, eslint, tsc, prettier clean |
+| evaluation | PASS — financial **100%**, citation validity 100% |
+
 ## Docker-deployment verification (2026-07-14, second pass)
 
 Running the **fully containerized** stack (rather than host dev servers) surfaced two

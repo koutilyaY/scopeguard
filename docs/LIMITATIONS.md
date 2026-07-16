@@ -81,3 +81,20 @@ A full audit against the mandatory acceptance criteria was performed; results ar
   audit found two (build-time-baked proxy URL; a healthcheck binary absent from the
   runtime image). Always validate changes against `docker compose up`, not just
   `make dev`.
+- **Ollama is required for scope classification** — it is not optional. With the shipped
+  `LLM_PROVIDER=ollama` and no reachable Ollama, reviews complete but are marked
+  `completed_with_errors` and classify nothing; only deterministic findings
+  (duplicates, allowances, reconciliation) are produced. Use `LLM_PROVIDER=fake` for a
+  no-AI demo, or start Ollama with `--profile ai` and pull the configured models. The
+  `ollama` service is behind a compose profile, so a plain `docker compose up` does
+  **not** start it.
+- **A database-less test run is refused, by design.** Roughly a third of the suite is
+  DB-backed; silently skipping it produced a green run that proved almost nothing. The
+  suite now fails loudly instead. Override with `SCOPEGUARD_ALLOW_DB_SKIP=1` only if you
+  deliberately want unit-only coverage and accept the skips.
+- **Host ports must not collide with other local projects.** ScopeGuard's infra ports are
+  now configurable (`POSTGRES_HOST_PORT`, `REDIS_HOST_PORT`, `MINIO_HOST_PORT`,
+  `MINIO_CONSOLE_HOST_PORT`, `MAILPIT_HOST_PORT`, `MAILPIT_SMTP_HOST_PORT`,
+  `OLLAMA_HOST_PORT`, plus `API_PORT`/`WEB_PORT`). If another container already owns a
+  default port, you may connect to *that* service and see confusing auth errors — change
+  the port rather than debugging the wrong database.

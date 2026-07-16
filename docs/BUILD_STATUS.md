@@ -82,6 +82,30 @@ and [FINAL_VERIFICATION.md](FINAL_VERIFICATION.md).
   migration up/down/up · seed on fresh DB · `docker compose up` all healthy · backup dump OK.
 - Static sweep: 0 TODO/FIXME/NotImplemented/mock/dead-buttons/hardcoded-secrets in app code.
 
+## Adversarial fresh-clone pass (2026-07-14)
+
+Cloned to a new directory with **empty volumes** and an unmodified `.env.example`, then
+followed the README literally. Found 4 defects the earlier passes missed because they
+reused a pre-seeded database and hand-set env vars:
+
+1. **Quick start produced a broken product** — `LLM_PROVIDER=ollama` by default, but the
+   `ollama` service is behind `profiles: ["ai"]` and the README called it "optional".
+   First review: `completed_with_errors`, no scope findings. README/env now document two
+   explicit paths.
+2. **`failure_reason` never rendered** — users saw an unexplained "completed with errors"
+   badge. `ReviewTab` now shows it; 2 regression tests added.
+3. **Test suite silently skipped 44 DB-backed tests and still exited 0** — now fails
+   loudly (exit 4) unless `SCOPEGUARD_ALLOW_DB_SKIP=1`; `test_llm_safety` errored instead
+   of skipping (missing marker) — fixed.
+4. **Hardcoded infra host ports** collided with another local project, so tests silently
+   hit the *wrong* Postgres ("password authentication failed"). All infra ports now
+   configurable via `*_HOST_PORT` with unchanged defaults.
+
+Fresh-clone result after fixes: all 7 services healthy · seed on empty volume · review
+`completed` with 0 classification errors · **$6,080** finding, duplicate excluded ·
+approve → change-order draft → 4-page PDF · **5/5 e2e vs the containerized stack** ·
+**140** backend + **15** frontend tests · eval PASS (financial 100%).
+
 ## Progress log
 
 - 2026-07-14: Phase 0 complete — environment verified, repo skeleton created.
