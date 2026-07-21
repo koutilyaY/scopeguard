@@ -92,6 +92,24 @@ A full audit against the mandatory acceptance criteria was performed; results ar
   DB-backed; silently skipping it produced a green run that proved almost nothing. The
   suite now fails loudly instead. Override with `SCOPEGUARD_ALLOW_DB_SKIP=1` only if you
   deliberately want unit-only coverage and accept the skips.
+- **Chat-model size vs. the default timeout (measured).** `OLLAMA_TIMEOUT_SECONDS`
+  defaults to 120. On a CPU-only machine under load, that is enough for a small model
+  but not a large one. Measured on an Apple-silicon laptop running several other Docker
+  stacks, using the real scope-classification prompt:
+  | Model | Size | Result |
+  |-------|------|--------|
+  | `llama3.2:latest` | 2.0 GB | classification returned in **82 s** — inside the default |
+  | `qwen3.5:latest` | 6.6 GB | **exceeded 120 s**, retried 3×, group left unclassified |
+  If groups fail with "Ollama unreachable or failing … timed out", either pick a smaller
+  `OLLAMA_CHAT_MODEL` or raise `OLLAMA_TIMEOUT_SECONDS`. Note the retry math: 3 attempts
+  per group, so an over-long timeout makes failures slow to surface.
+- **A worker restart mid-run leaves the review stuck in `running`.** There is no reaper
+  for orphaned runs: if the Celery worker is killed or crashes while a review is
+  executing, that `ReviewRun` keeps `status='running'` indefinitely and the UI polls it
+  forever. Recover manually with
+  `UPDATE review_runs SET status='failed', failure_reason='…' WHERE status='running';`
+  A stale-run reaper (e.g. fail runs whose `started_at` exceeds a deadline) is not
+  implemented in the MVP.
 - **Host ports must not collide with other local projects.** ScopeGuard's infra ports are
   now configurable (`POSTGRES_HOST_PORT`, `REDIS_HOST_PORT`, `MINIO_HOST_PORT`,
   `MINIO_CONSOLE_HOST_PORT`, `MAILPIT_HOST_PORT`, `MAILPIT_SMTP_HOST_PORT`,

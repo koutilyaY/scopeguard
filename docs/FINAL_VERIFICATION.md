@@ -41,6 +41,42 @@ Minor defects fixed: flaky approve→generate e2e test (now deterministic); unla
 finding-filter `<select>`s (added `htmlFor`/`aria-label`); unformatted frontend/test
 files (prettier/ruff format applied).
 
+## Real-Ollama verification (2026-07-21, fourth pass)
+
+Earlier passes ran everything against the deterministic fake provider; the live-AI path
+had never been exercised. This pass pointed the stack at a real Ollama
+(`OLLAMA_BASE_URL=http://host.docker.internal:11434`) and used real models.
+
+**Embeddings — verified working.** `nomic-embed-text` via `OllamaProvider.create_embeddings`:
+- 3 texts embedded in 80.1 s, **768 dimensions** — matches the pgvector column and
+  `OLLAMA_EMBED_DIMENSIONS`.
+- Semantic sanity: two paraphrased exclusion clauses scored **0.778** cosine similarity,
+  versus **0.484** against an unrelated payment-terms clause. Retrieval ordering is real.
+
+**Scope classification — verified working.** One real call to `llama3.2:latest` with the
+production `scope_classification` prompt and the Salesforce scenario:
+| Field | Value | Correct? |
+|-------|-------|----------|
+| elapsed | 82.0 s | within the 120 s default |
+| `classification` | `potentially_out_of_scope` | ✅ |
+| `requires_customer_authorization` | `true` | ✅ (no written approval exists) |
+| cited clause | `c1`, verbatim quotation | ✅ passed `verify_citation` |
+| **invalid citations** | **0** | ✅ no hallucinated evidence |
+Structured output validated against the Pydantic schema on the first attempt — no repair
+round needed.
+
+**Model size vs. timeout — a real constraint, now documented.** The same review with
+`qwen3.5:latest` (6.6 GB) exceeded the 120 s default on this CPU-only, heavily-loaded
+machine. The pipeline behaved correctly: 3 retries with backoff, a per-group error
+logged, deterministic findings still produced, run marked `completed_with_errors`. The
+fix is configuration, not code — README and LIMITATIONS now carry the measured numbers
+and guidance.
+
+**Robustness gap found (documented, not fixed).** Restarting the worker mid-run leaves
+the `ReviewRun` stuck at `status='running'` forever — there is no orphaned-run reaper,
+and the UI polls indefinitely. Manual recovery is a one-line UPDATE. Recorded in
+LIMITATIONS as an MVP gap.
+
 ## Fresh-clone verification (2026-07-14, third pass — adversarial)
 
 Previous passes tested with a **pre-seeded volume** and hand-set env vars, which hid

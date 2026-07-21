@@ -79,6 +79,19 @@ Check readiness before running a review:
 curl -s localhost:8000/api/v1/health/ollama   # lists missing models + exact pull commands
 ```
 
+**Pick a model your hardware can actually run.** `OLLAMA_TIMEOUT_SECONDS` defaults to
+120. Measured on a CPU-only machine with the real classification prompt: a 2 GB model
+(`llama3.2`) answered in **82 s**, while a 6.6 GB model (`qwen3.5`) exceeded the timeout
+and left groups unclassified. Any model can be used — they are configurable:
+```bash
+OLLAMA_CHAT_MODEL=llama3.2:latest      # smaller/faster; good starting point on CPU
+OLLAMA_TIMEOUT_SECONDS=300             # or raise the timeout for a larger model
+```
+You can also point at an Ollama already running on your host instead of the container:
+```bash
+OLLAMA_BASE_URL=http://host.docker.internal:11434
+```
+
 > If `LLM_PROVIDER=ollama` and Ollama is unreachable, a review still completes and still
 > returns its **deterministic** findings (duplicates, allowances, reconciliation), but it
 > is marked `completed_with_errors` and the UI shows exactly which groups could not be
